@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<server name="default">
+    <cluster password="secretpassword"/>
+    <statistics enabled="${wildfly.messaging-activemq.statistics-enabled:${wildfly.statistics-enabled:false}}"/>
+    <!-- Source JMS Queue -->
+    <queue name="JMSBridgeSourceQueue" address="queue/sourceQueue"/>
+    <security-setting name="#">
+        <role name="guest" send="true" consume="true" create-non-durable-queue="true" delete-non-durable-queue="true"/>
+    </security-setting>
+    <address-setting name="#" dead-letter-address="jms.queue.DLQ" expiry-address="jms.queue.ExpiryQueue" max-size-bytes="10485760" page-size-bytes="2097152" message-counter-history-day-limit="10" redistribution-delay="1000"/>
+    <http-connector name="http-connector" socket-binding="http" endpoint="http-acceptor"/>
+    <http-connector name="http-connector-throughput" socket-binding="http" endpoint="http-acceptor-throughput">
+        <param name="batch-delay" value="50"/>
+    </http-connector>
+    <!-- HTTP Connector used by the Bridge -->
+    <http-connector name="bridge-connector" socket-binding="messaging-remote" endpoint="http-acceptor"/>
+    <in-vm-connector name="in-vm" server-id="0">
+        <param name="buffer-pooling" value="false"/>
+    </in-vm-connector>
+    <http-acceptor name="http-acceptor" http-listener="default"/>
+    <http-acceptor name="http-acceptor-throughput" http-listener="default">
+        <param name="batch-delay" value="50"/>
+        <param name="direct-deliver" value="false"/>
+    </http-acceptor>
+    <in-vm-acceptor name="in-vm" server-id="0">
+        <param name="buffer-pooling" value="false"/>
+    </in-vm-acceptor>
+    <jgroups-broadcast-group name="bg-group1" jgroups-cluster="activemq-cluster" connectors="http-connector"/>
+    <jgroups-discovery-group name="dg-group1" jgroups-cluster="activemq-cluster"/>
+    <cluster-connection name="my-cluster" address="jms" connector-name="http-connector" discovery-group="dg-group1"/>
+    <!-- Bridge configuration -->
+    <jms-queue name="ExpiryQueue" entries="java:/jms/queue/ExpiryQueue"/>
+    <jms-queue name="DLQ" entries="java:/jms/queue/DLQ"/>
+    <connection-factory name="InVmConnectionFactory" entries="java:/ConnectionFactory" connectors="in-vm"/>
+    <connection-factory name="RemoteConnectionFactory" entries="java:jboss/exported/jms/RemoteConnectionFactory" connectors="bridge-connector" ha="true" block-on-acknowledge="true" reconnect-attempts="-1"/>
+    <pooled-connection-factory name="activemq-ra" entries="java:/JmsXA java:jboss/DefaultJMSConnectionFactory" connectors="in-vm" transaction="xa"/>
+</server>
