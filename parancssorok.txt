@@ -1,0 +1,10 @@
+
+wildfly indítás:
+----------------
+cd wildfly-30.0.1.Final/bin/
+./standalone.sh -c standalone-full.xml
+
+JVM indítás távoli gép debug-gal:
+---------------------------------
+java -jar -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8100,allow=192.168.0.0/16+::1, RPiServer-1.0.0-jar-with-dependencies.jar
+
